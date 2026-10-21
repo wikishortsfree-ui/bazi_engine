@@ -1,0 +1,12 @@
+# Phase 2 (MLX): projection + frozen LLM on Apple Silicon.
+# Phase 1 uses PyTorch — see requirements.txt. Use a separate venv (e.g. venv_phase2)
+# for Phase 2, or install both in the same env only if you need to run encoder
+# conversion (PyTorch checkpoints -> MLX) on the same machine.
+
+mlx>=0.20.0
+mlx-lm>=0.20.0
+transformers>=4.45.0
+huggingface-hub>=0.26.0
+
+# Evaluation (Phase 2) — BLEU and ROUGE-L are implemented natively (character-level for Chinese).
+# rouge-score>=0.1.2  # available if word-level ROUGE is needed later

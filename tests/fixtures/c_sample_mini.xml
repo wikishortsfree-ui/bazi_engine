@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<astrodatabank_export export_format="160715">
+  <timestamp>20260208</timestamp>
+  <important_notice>Sample for testing parser.</important_notice>
+  <adb_entry adb_id="1">
+    <update_timestamp>20260208</update_timestamp>
+    <public_data>
+      <name>Test Person</name>
+      <sflname>Person</sflname>
+      <gender csex="m">Male</gender>
+      <roddenrating rrc="1">AA</roddenrating>
+      <datatype dsc="1" dtc="1" sdatasource="BC/BR" sdatatype="Birth"/>
+      <bdata>
+        <sbdate ccalendar="g" iday="24" imonth="2" iyear="1955"/>
+        <sbdate_dmy>24 February 1955</sbdate_dmy>
+        <sbtime ctimetype="L" sbtime_ampm="7:15 PM" stmerid="12" stimetype="local">19:15</sbtime>
+        <place slati="37n47" slong="122w25">San Francisco, California</place>
+        <country sctr="US">United States</country>
+        <positions asc_degmin="" moon_degmin="" moon_sign="Leo" sun_degmin="" sun_sign="Pisces"/>
+      </bdata>
+      <scollector>Test</scollector>
+      <seditor>Test</seditor>
+      <sbiographer>Test</sbiographer>
+      <screationdate>2026-01-01</screationdate>
+      <slasteditdate>2026-01-01</slasteditdate>
+    </public_data>
+    <text_data>
+      <shortbiography copyright="ADB">American entrepreneur.</shortbiography>
+      <adb_link>https://www.astro.com/astro-databank/Test_Person</adb_link>
+      <sourcenotes copyright="ADB">BC/BR in hand</sourcenotes>
+    </text_data>
+    <research_data>
+      <categories count="1" note="">
+        <category adb_id="1" cat_id="1" catnotes="Technology"/>
+      </categories>
+    </research_data>
+  </adb_entry>
+  <adb_entry adb_id="2">
+    <update_timestamp>20260208</update_timestamp>
+    <public_data>
+      <name>Another Person</name>
+      <sflname>Person</sflname>
+      <gender csex="f">Female</gender>
+      <roddenrating rrc="2">A</roddenrating>
+      <datatype dsc="1" dtc="1" sdatasource="BC/BR" sdatatype="Birth"/>
+      <bdata>
+        <sbdate ccalendar="g" iday="15" imonth="6" iyear="1980"/>
+        <sbdate_dmy>15 June 1980</sbdate_dmy>
+        <sbtime ctimetype="L" sbtime_ampm="12:00 PM" stmerid="12" stimetype="local">12:00</sbtime>
+        <place slati="51.5074" slong="-0.1278">London</place>
+        <country sctr="UK">United Kingdom</country>
+        <positions asc_degmin="" moon_degmin="" moon_sign="Aries" sun_degmin="" sun_sign="Gemini"/>
+      </bdata>
+      <scollector>Test</scollector>
+      <seditor>Test</seditor>
+      <sbiographer>Test</sbiographer>
+      <screationdate>2026-01-01</screationdate>
+      <slasteditdate>2026-01-01</slasteditdate>
+    </public_data>
+    <text_data>
+      <shortbiography copyright="ADB">British public figure.</shortbiography>
+      <adb_link>Another_Person</adb_link>
+      <sourcenotes copyright="ADB">Source notes</sourcenotes>
+    </text_data>
+    <research_data>
+      <categories count="1" note="">
+        <category adb_id="2" cat_id="2" catnotes="Politics"/>
+      </categories>
+    </research_data>
+  </adb_entry>
+  <adb_entry_count count="2"/>
+</astrodatabank_export>

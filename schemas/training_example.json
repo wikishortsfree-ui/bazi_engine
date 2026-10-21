@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bazi-engine/schemas/training_example.json",
+  "title": "Phase 2 Training Example",
+  "description": "Schema for one line of curated_synthetic.jsonl — the input to scripts/prepare_phase2_dataset.py. See docs/phase2_implementation.md § Curated input format.",
+  "type": "object",
+  "required": ["chart", "task_type", "query", "reasoning", "output"],
+  "properties": {
+    "chart": {
+      "type": "object",
+      "description": "Full BaziChart JSON (as from BaziChart.to_json()). Must be parseable by BaziChart.from_json(json.dumps(chart)).",
+      "required": ["metadata", "natal_pillars", "day_master", "ten_gods", "elemental_strengths", "useful_god", "interactions"],
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "required": ["birth_datetime", "sect"],
+          "properties": {
+            "birth_datetime": { "type": "string", "description": "ISO 8601 datetime with timezone offset" },
+            "timezone_offset": { "type": "number" },
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "sect": { "type": "integer", "enum": [1, 2] },
+            "calculation_timestamp": { "type": "string" },
+            "calculator_version": { "type": "string" }
+          }
+        },
+        "natal_pillars": {
+          "type": "object",
+          "required": ["year", "month", "day", "hour"],
+          "properties": {
+            "year": { "$ref": "#/$defs/pillar" },
+            "month": { "$ref": "#/$defs/pillar" },
+            "day": { "$ref": "#/$defs/pillar" },
+            "hour": { "$ref": "#/$defs/pillar" }
+          }
+        },
+        "day_master": {
+          "type": "object",
+          "required": ["stem", "element"],
+          "properties": {
+            "stem": { "type": "string", "enum": ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"] },
+            "element": { "type": "string", "enum": ["木","火","土","金","水"] },
+            "strength_percentile": { "type": "number", "minimum": 0, "maximum": 1 },
+            "classification": { "type": "string" }
+          }
+        },
+        "ten_gods": {
+          "type": "object",
+          "required": ["year_stem", "month_stem", "day_stem", "hour_stem",
+                       "year_branch", "month_branch", "day_branch", "hour_branch"]
+        },
+        "hidden_stems": { "type": "object" },
+        "elemental_strengths": {
+          "type": "object",
+          "required": ["wood", "fire", "earth", "metal", "water"],
+          "properties": {
+            "wood": { "type": "number" },
+            "fire": { "type": "number" },
+            "earth": { "type": "number" },
+            "metal": { "type": "number" },
+            "water": { "type": "number" }
+          }
+        },
+        "useful_god": {
+          "type": "object",
+          "required": ["primary", "primary_element"]
+        },
+        "interactions": {
+          "type": "object",
+          "properties": {
+            "stem_combinations": { "type": "array" },
+            "stem_clashes": { "type": "array" },
+            "branch_six_combinations": { "type": "array" },
+            "branch_clashes": { "type": "array" },
+            "three_harmony": { "type": "array" },
+            "harms": { "type": "array" },
+            "punishments": { "type": "array" },
+            "destructions": { "type": "array" }
+          }
+        },
+        "dynamic": {
+          "description": "Non-null for 流年/流月 tasks. Contains temporal_context and cross_interactions.",
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["temporal_context", "cross_interactions"],
+              "properties": {
+                "temporal_context": { "type": "object" },
+                "cross_interactions": { "type": "object" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "task_type": {
+      "type": "string",
+      "enum": ["本命分析", "流年", "流月", "八字问答"],
+      "description": "Task category."
+    },
+    "query": {
+      "type": "string",
+      "minLength": 1,
+      "description": "User question or prompt (Chinese)."
+    },
+    "reasoning": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Chain-of-thought reasoning before the final answer."
+    },
+    "output": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Final answer / interpretation."
+    },
+    "human_review": {
+      "type": "object",
+      "description": "Optional: human curation metadata.",
+      "properties": {
+        "action": { "type": "string", "enum": ["accept", "flag"] },
+        "notes": { "type": "string" },
+        "timestamp": { "type": "string" }
+      }
+    },
+    "name": {
+      "type": "string",
+      "description": "Optional: source name (e.g. Astrodatabank person name)."
+    },
+    "selection_source": {
+      "type": "string",
+      "description": "Optional: provenance (e.g. 'astrodatabank', 'synthetic')."
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "pillar": {
+      "type": "object",
+      "required": ["stem", "branch", "element_stem", "element_branch"],
+      "properties": {
+        "stem": { "type": "string" },
+        "branch": { "type": "string" },
+        "element_stem": { "type": "string" },
+        "element_branch": { "type": "string" }
+      }
+    }
+  }
+}

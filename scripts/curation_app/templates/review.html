@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>八字 Phase 2 Curation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+    .element-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: #fff; }
+    .pillar-col { text-align: center; min-width: 64px; }
+    .pillar-cell { padding: 6px 10px; border: 1px solid #e5e7eb; font-size: 1.5rem; font-weight: 500; font-family: "PingFang SC", "Noto Sans SC", "Hiragino Sans GB", "Microsoft YaHei", serif; }
+    .pillar-header { font-size: 0.7rem; text-transform: uppercase; color: #9ca3af; padding: 2px 0; }
+    .issue-chip { display: inline-block; background: #fef2f2; color: #dc2626; font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; margin: 2px; border: 1px solid #fecaca; }
+    .lang-chip { display: inline-block; background: #fffbeb; color: #d97706; font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; margin: 2px; border: 1px solid #fde68a; }
+    .tier-1 { background: #dcfce7; color: #166534; }
+    .tier-2 { background: #fef9c3; color: #854d0e; }
+    .tier-3 { background: #fee2e2; color: #991b1b; }
+    .action-accept { background: #059669; }
+    .action-reject { background: #dc2626; }
+    .action-flag { background: #d97706; }
+    .strength-bar { height: 6px; border-radius: 3px; transition: width 0.3s; }
+    .interaction-tag { display: inline-block; background: #ede9fe; color: #5b21b6; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; margin: 1px; }
+    textarea:focus, select:focus, input:focus { outline: none; box-shadow: 0 0 0 2px rgba(59,130,246,0.5); }
+    .text-block { white-space: pre-wrap; line-height: 1.7; font-size: 0.9rem; }
+    mark.qc-flag { background: #fecaca; color: #991b1b; padding: 1px 2px; border-radius: 2px; font-weight: 500; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  {# ── Top bar ── #}
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h1 class="text-lg font-bold text-gray-800">八字 Phase 2 Curation</h1>
+        <span class="text-sm text-gray-500">{{ progress.reviewed }}/{{ progress.total }} reviewed</span>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <span class="px-2 py-0.5 rounded bg-green-100 text-green-700 font-medium">{{ progress.accepted }} accepted</span>
+        <span class="px-2 py-0.5 rounded bg-red-100 text-red-700 font-medium">{{ progress.rejected }} rejected</span>
+        <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">{{ progress.flagged }} flagged</span>
+        <a href="/export" class="ml-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">Export</a>
+      </div>
+    </div>
+    {# Progress bar #}
+    <div class="h-1 bg-gray-100">
+      <div class="h-1 bg-blue-500 transition-all duration-300" style="width: {{ progress.pct }}%"></div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-4">
+
+    {# ── Filters ── #}
+    <div class="mb-4 flex flex-wrap gap-3 items-center bg-white rounded-lg border border-gray-200 p-3">
+      <span class="text-sm font-medium text-gray-600">Filters:</span>
+      <form method="GET" action="/review/0" class="flex flex-wrap gap-3 items-center">
+        <select name="tier" class="text-sm border border-gray-300 rounded px-2 py-1">
+          <option value="all" {{ 'selected' if filter_tier == 'all' }}>All tiers</option>
+          <option value="1" {{ 'selected' if filter_tier == '1' }}>Tier 1 (≥80)</option>
+          <option value="2" {{ 'selected' if filter_tier == '2' }}>Tier 2 (60–79)</option>
+          <option value="3" {{ 'selected' if filter_tier == '3' }}>Tier 3 (<60)</option>
+        </select>
+        <select name="status" class="text-sm border border-gray-300 rounded px-2 py-1">
+          <option value="all" {{ 'selected' if filter_status == 'all' }}>All status</option>
+          <option value="unreviewed" {{ 'selected' if filter_status == 'unreviewed' }}>Unreviewed</option>
+          <option value="accept" {{ 'selected' if filter_status == 'accept' }}>Accepted</option>
+          <option value="reject" {{ 'selected' if filter_status == 'reject' }}>Rejected</option>
+          <option value="flag" {{ 'selected' if filter_status == 'flag' }}>Flagged</option>
+        </select>
+        <select name="task" class="text-sm border border-gray-300 rounded px-2 py-1">
+          <option value="all" {{ 'selected' if filter_task == 'all' }}>All tasks</option>
+          <option value="本命分析" {{ 'selected' if filter_task == '本命分析' }}>本命分析</option>
+          <option value="流年" {{ 'selected' if filter_task == '流年' }}>流年</option>
+          <option value="流月" {{ 'selected' if filter_task == '流月' }}>流月</option>
+          <option value="八字问答" {{ 'selected' if filter_task == '八字问答' }}>八字问答</option>
+        </select>
+        <button type="submit" class="text-sm px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800">Apply</button>
+      </form>
+      <span class="text-xs text-gray-400 ml-auto">
+        {% if filtered_total > 0 %}
+          Showing {{ filtered_pos + 1 }} of {{ filtered_total }} matching records (record #{{ current_idx }})
+        {% else %}
+          No records match filters
+        {% endif %}
+      </span>
+    </div>
+
+    {% if record is none %}
+      <div class="text-center py-16 text-gray-400">
+        <p class="text-xl">No records match the current filters.</p>
+        <a href="/review/0" class="text-blue-500 underline mt-4 inline-block">Clear filters</a>
+      </div>
+    {% else %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      {# ── Left column: Chart ── #}
+      <div class="lg:col-span-1 space-y-4">
+
+        {# Chart pillars #}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+            四柱 Natal Pillars
+            {% if record.get('name') %}<span class="font-normal text-gray-400 normal-case ml-2">{{ record.name }}</span>{% endif %}
+          </h2>
+          <table class="w-full">
+            <thead>
+              <tr>
+                {% for p in chart_display.pillars %}
+                <th class="pillar-header">
+                  {{ {'year':'年柱','month':'月柱','day':'日柱','hour':'时柱'}[p.label] }}
+                </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {% for p in chart_display.pillars %}
+                <td class="pillar-cell text-center" style="color: {{ element_colors.get(p.element_stem, '#374151') }}">
+                  {{ p.stem }}
+                </td>
+                {% endfor %}
+              </tr>
+              <tr>
+                {% for p in chart_display.pillars %}
+                <td class="pillar-cell text-center" style="color: {{ element_colors.get(p.element_branch, '#374151') }}">
+                  {{ p.branch }}
+                </td>
+                {% endfor %}
+              </tr>
+            </tbody>
+          </table>
+
+          {# Ten gods row #}
+          {% set tg = chart_display.ten_gods %}
+          {% if tg %}
+          <div class="mt-3 text-xs text-gray-500">
+            <div class="flex justify-around">
+              <span>{{ tg.get('year_stem','') }}</span>
+              <span>{{ tg.get('month_stem','') }}</span>
+              <span class="text-gray-300">{{ tg.get('day_stem','') }}</span>
+              <span>{{ tg.get('hour_stem','') }}</span>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        {# Day master & strength #}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 class="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">日主 Day Master</h2>
+          {% set dm = chart_display.day_master %}
+          <div class="flex items-center gap-3">
+            <span class="text-2xl font-bold" style="color: {{ element_colors.get(dm.get('element',''), '#374151') }}">
+              {{ dm.get('stem','?') }}
+            </span>
+            <span class="text-sm text-gray-600">{{ dm.get('element','') }}</span>
+            <span class="px-2 py-0.5 rounded text-xs font-medium
+              {% if dm.get('classification') == '身强' %}bg-red-100 text-red-700
+              {% elif dm.get('classification') == '身弱' %}bg-blue-100 text-blue-700
+              {% else %}bg-gray-100 text-gray-700{% endif %}">
+              {{ dm.get('classification','?') }}
+            </span>
+            <span class="text-sm text-gray-500">{{ (dm.get('strength_percentile', 0) * 100)|round(1) }}%</span>
+          </div>
+        </div>
+
+        {# Elemental strengths #}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 class="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">五行 Elemental Strengths</h2>
+          {% set el_map = {'wood':'木','fire':'火','earth':'土','metal':'金','water':'水'} %}
+          {% for elem, label in el_map.items() %}
+            {% set val = chart_display.strengths.get(elem, 0) %}
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-6 text-xs font-bold" style="color: {{ element_colors.get(label, '#666') }}">{{ label }}</span>
+              <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                <div class="strength-bar" style="width: {{ (val * 100)|round(1) }}%; background: {{ element_colors.get(label, '#999') }};"></div>
+              </div>
+              <span class="text-xs text-gray-500 w-10 text-right">{{ (val * 100)|round(1) }}%</span>
+            </div>
+          {% endfor %}
+        </div>
+
+        {# Useful god #}
+        {% set ug = chart_display.useful_god %}
+        {% if ug %}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 class="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">用神 Useful God</h2>
+          <div class="text-sm">
+            <span class="font-medium">{{ ug.get('primary','?') }}</span>
+            <span class="text-gray-400 mx-1">·</span>
+            <span style="color: {{ element_colors.get(ug.get('primary_element',''), '#666') }}">{{ ug.get('primary_element','') }}</span>
+            {% if ug.get('methodology') %}
+            <div class="text-xs text-gray-400 mt-1">{{ ug.methodology }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Interactions #}
+        {% if chart_display.interactions_summary %}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 class="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Interactions</h2>
+          {% set type_labels = {
+            'stem_combinations': '天干合',
+            'stem_clashes': '天干冲',
+            'branch_six_combinations': '六合',
+            'branch_clashes': '地支冲',
+            'three_harmony': '三合/三会',
+            'harms': '害',
+            'punishments': '刑',
+            'destructions': '破'
+          } %}
+          {% for grp in chart_display.interactions_summary %}
+            <div class="mb-2">
+              <span class="text-xs font-medium text-gray-600">{{ type_labels.get(grp.type, grp.type) }}</span>
+              <span class="text-xs text-gray-400">({{ grp.count }})</span>
+              <div class="mt-0.5">
+                {% for item in grp['items'] %}
+                  <span class="interaction-tag">
+                    {% if item is mapping %}
+                      {% if item.get('element') %}{{ item.element }}{% endif %}
+                      {% if item.get('combo_type') %} {{ item.combo_type }}{% endif %}
+                      {% if item.get('present_branches') %} {{ item.present_branches|join('·') }}{% endif %}
+                      {% if item.get('stems') %} {{ item.stems|join('·') }}{% endif %}
+                      {% if item.get('branches') %} {{ item.branches|join('·') }}{% endif %}
+                      {% if item.get('positions') %} [{{ item.positions|join(',') }}]{% endif %}
+                    {% else %}
+                      {{ item }}
+                    {% endif %}
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Metadata #}
+        {% set meta = chart_display.metadata %}
+        {% if meta %}
+        <div class="bg-white rounded-lg border border-gray-200 p-4 text-xs text-gray-400">
+          {% if meta.get('birth_datetime') %}<div>Birth: {{ meta.birth_datetime }}</div>{% endif %}
+          {% if meta.get('lat') %}<div>Lat/Lng: {{ meta.lat }}, {{ meta.lng }}</div>{% endif %}
+          {% if record.get('selection_source') %}<div>Source: {{ record.selection_source }}</div>{% endif %}
+        </div>
+        {% endif %}
+
+        {# Biography (from astrodatabank) #}
+        {% if biography %}
+        <div class="bg-white rounded-lg border border-blue-200 p-4">
+          <h2 class="text-sm font-semibold text-blue-700 mb-2 uppercase tracking-wide">Biography (Astrodatabank)</h2>
+          <div class="text-xs text-gray-600 leading-relaxed max-h-60 overflow-y-auto" style="white-space: pre-wrap;">{{ biography }}</div>
+        </div>
+        {% endif %}
+
+      </div>
+
+      {# ── Right column: Content + QC + Actions ── #}
+      <div class="lg:col-span-2 space-y-4">
+
+        {# QC Score banner #}
+        {% set q = record.get('quality', {}) %}
+        {% set fi = record.get('factual_issues', []) %}
+        {% set li = record.get('language_issues', []) %}
+        {% set deduction_map = {
+          'chart_parse': 100, 'phantom_ten_god': 8, 'composite_ten_god': 5,
+          'strength_mismatch': 15, 'phantom_interaction': 8, 'useful_god_mismatch': 15,
+          'short_reasoning': 10, 'short_output': 10, 'generic_phrases': 5,
+          'thin_terminology': 5, 'repetition': 10
+        } %}
+        <div class="bg-white rounded-lg border border-gray-200 p-3">
+          <div class="flex items-center gap-4 mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-gray-600">QC Score:</span>
+              <span class="text-xl font-bold {% if q.get('score',0) >= 80 %}text-green-600{% elif q.get('score',0) >= 60 %}text-amber-600{% else %}text-red-600{% endif %}">
+                {{ q.get('score', '?') }}
+              </span>
+              <span class="text-xs text-gray-400">/ 100</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-xs font-semibold
+              {% if q.get('tier') == 1 %}tier-1{% elif q.get('tier') == 2 %}tier-2{% else %}tier-3{% endif %}">
+              Tier {{ q.get('tier', '?') }}
+            </span>
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+              {{ record.get('task_type', '?') }}
+            </span>
+
+            {% if review_data.get('action') %}
+            <span class="ml-auto px-3 py-1 rounded text-white text-xs font-bold
+              {% if review_data.action == 'accept' %}action-accept
+              {% elif review_data.action == 'reject' %}action-reject
+              {% else %}action-flag{% endif %}">
+              {{ review_data.action|upper }}
+            </span>
+            {% endif %}
+          </div>
+
+          {# Score breakdown #}
+          {% if fi or li %}
+          <div class="border-t border-gray-100 pt-2 mt-1">
+            <div class="text-xs text-gray-500 mb-1.5 font-medium">Score breakdown: 100 base
+              {% for issue in fi %}
+                <span class="text-red-500 ml-1">− {{ deduction_map.get(issue.get('type',''), 5) }} ({{ issue.get('type','') }})</span>
+              {% endfor %}
+              {% for issue in li %}
+                <span class="text-amber-600 ml-1">− {{ deduction_map.get(issue.get('type',''), 5) }} ({{ issue.get('type','') }})</span>
+              {% endfor %}
+              = <span class="font-bold {% if q.get('score',0) >= 80 %}text-green-600{% elif q.get('score',0) >= 60 %}text-amber-600{% else %}text-red-600{% endif %}">{{ q.get('score', '?') }}</span>
+            </div>
+            <div class="space-y-1">
+              {% for issue in fi %}
+              <div class="flex items-start gap-2">
+                <span class="issue-chip shrink-0">factual · −{{ deduction_map.get(issue.get('type',''), 5) }}</span>
+                <span class="text-xs text-gray-600"><strong>{{ issue.get('type','') }}</strong>: {{ issue.get('message','') }}</span>
+              </div>
+              {% endfor %}
+              {% for issue in li %}
+              <div class="flex items-start gap-2">
+                <span class="lang-chip shrink-0">language · −{{ deduction_map.get(issue.get('type',''), 5) }}</span>
+                <span class="text-xs text-gray-600"><strong>{{ issue.get('type','') }}</strong>: {{ issue.get('message','') }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="text-xs text-green-600 mt-1">No issues detected — full score</div>
+          {% endif %}
+        </div>
+
+        {# Query #}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Query 查询</h3>
+          <div class="text-sm text-gray-700">{{ record.get('query', '') }}</div>
+        </div>
+
+        {# Reasoning #}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Reasoning 推理</h3>
+          <div class="text-block text-gray-700">{{ record.get('reasoning', '') }}</div>
+        </div>
+
+        {# Output / interpretation #}
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Output 解读</h3>
+          <div class="text-block text-gray-700">{{ record.get('output', '') }}</div>
+        </div>
+
+        {# ── Action form ── #}
+        <form method="POST" action="/submit_review" class="bg-white rounded-lg border-2 border-blue-200 p-4">
+          <input type="hidden" name="record_idx" value="{{ current_idx }}">
+          <input type="hidden" name="filter_tier" value="{{ filter_tier }}">
+          <input type="hidden" name="filter_status" value="{{ filter_status }}">
+          <input type="hidden" name="filter_task" value="{{ filter_task }}">
+
+          <div class="flex items-start gap-4 flex-wrap">
+            <div class="flex-1 min-w-[200px]">
+              <label class="text-xs font-semibold text-gray-500 uppercase">Notes</label>
+              <textarea name="notes" rows="2"
+                class="w-full mt-1 border border-gray-300 rounded px-3 py-2 text-sm"
+                placeholder="Optional review notes…">{{ review_data.get('notes', '') }}</textarea>
+            </div>
+
+            <div class="flex flex-col gap-2 pt-4">
+              <div class="flex gap-2">
+                <button type="submit" name="action" value="accept"
+                  class="px-5 py-2 rounded text-white font-semibold text-sm bg-green-600 hover:bg-green-700 transition">
+                  Accept
+                </button>
+                <button type="submit" name="action" value="flag"
+                  class="px-5 py-2 rounded text-white font-semibold text-sm bg-amber-500 hover:bg-amber-600 transition">
+                  Flag
+                </button>
+                <button type="submit" name="action" value="reject"
+                  class="px-5 py-2 rounded text-white font-semibold text-sm bg-red-600 hover:bg-red-700 transition">
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {# Navigation #}
+          <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+            <button type="submit" name="nav" value="prev"
+              formaction="/submit_review"
+              class="px-4 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 {% if filtered_pos <= 0 %}opacity-40 cursor-not-allowed{% endif %}"
+              {% if filtered_pos <= 0 %}disabled{% endif %}>
+              ← Previous
+            </button>
+            <span class="text-xs text-gray-400">
+              {{ filtered_pos + 1 }} / {{ filtered_total }}
+              &nbsp;·&nbsp; Record #{{ current_idx }}
+            </span>
+            <button type="submit" name="nav" value="next"
+              formaction="/submit_review"
+              class="px-4 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 {% if filtered_pos >= filtered_total - 1 %}opacity-40 cursor-not-allowed{% endif %}"
+              {% if filtered_pos >= filtered_total - 1 %}disabled{% endif %}>
+              Next →
+            </button>
+          </div>
+        </form>
+
+        {# Keyboard shortcuts hint #}
+        <div class="text-xs text-gray-400 text-center mt-1">
+          Keyboard: <kbd class="px-1 border border-gray-300 rounded bg-gray-50">a</kbd> accept
+          <kbd class="px-1 border border-gray-300 rounded bg-gray-50 ml-1">f</kbd> flag
+          <kbd class="px-1 border border-gray-300 rounded bg-gray-50 ml-1">r</kbd> reject
+          <kbd class="px-1 border border-gray-300 rounded bg-gray-50 ml-1">←</kbd><kbd class="px-1 border border-gray-300 rounded bg-gray-50">→</kbd> navigate
+        </div>
+
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <script>
+    document.addEventListener('keydown', function(e) {
+      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+      const form = document.querySelector('form[action="/submit_review"]');
+      if (!form) return;
+
+      if (e.key === 'a') {
+        form.querySelector('[name="action"][value="accept"]').click();
+      } else if (e.key === 'f') {
+        form.querySelector('[name="action"][value="flag"]').click();
+      } else if (e.key === 'r') {
+        form.querySelector('[name="action"][value="reject"]').click();
+      } else if (e.key === 'ArrowLeft') {
+        const prev = form.querySelector('[name="nav"][value="prev"]');
+        if (prev && !prev.disabled) prev.click();
+      } else if (e.key === 'ArrowRight') {
+        const next = form.querySelector('[name="nav"][value="next"]');
+        if (next && !next.disabled) next.click();
+      }
+    });
+
+    (function() {
+      var terms = {{ highlight_terms | tojson }};
+      if (!terms || terms.length === 0) return;
+      var blocks = document.querySelectorAll('.text-block');
+      blocks.forEach(function(block) {
+        var html = block.textContent;
+        terms.forEach(function(term) {
+          var escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          html = html.replace(new RegExp(escaped, 'g'), '<mark class="qc-flag">' + term + '</mark>');
+        });
+        block.innerHTML = html;
+      });
+    })();
+  </script>
+</body>
+</html>
